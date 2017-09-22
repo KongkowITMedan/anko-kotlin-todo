@@ -1,42 +1,45 @@
 package com.zigic.todolist.fragment
 
-import android.support.v4.content.ContextCompat
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.View
+import android.widget.TextView
 import com.zigic.todolist.R
 import com.zigic.todolist.adapter.FinishedAdapter
+import com.zigic.todolist.rest.ApiClient
+import com.zigic.todolist.rest.response.Task
+import com.zigic.todolist.rest.service.TaskService
 import org.jetbrains.anko.*
-import org.jetbrains.anko.appcompat.v7.toolbar
-import org.jetbrains.anko.design.floatingActionButton
 import org.jetbrains.anko.recyclerview.v7.recyclerView
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
 
 /**
  * Created by zigic on 15/09/17.
  */
 
 class FragmentFinishedUI(val finishedAdapter: FinishedAdapter) : AnkoComponent<FragmentFinished> {
+    val TAG:String = FragmentFinishedUI::class.java.name
+    val taskService: TaskService = ApiClient().getClient().create(TaskService::class.java)
+    lateinit var emptyView: TextView
+    lateinit var list: RecyclerView
+
     override fun createView(ui: AnkoContext<FragmentFinished>): View = with(ui) {
         relativeLayout {
             lparams(width = matchParent, height = wrapContent)
 
-            val emptyView = textView("What's your Todo List for today?") {
+            emptyView = textView("What's your Todo List for today?") {
                 id = R.id.item_empty
                 textSize = 20f
             }.lparams(width = wrapContent, height = wrapContent) {
                 centerInParent()
             }
 
-            fun updateEmptyViewVisibility(recyclerView: RecyclerView) {
-                if (doesListHaveItem(recyclerView)) {
-                    emptyView.visibility = View.GONE
-                } else {
-                    emptyView.visibility = View.VISIBLE
-                }
-            }
-
             //layout to display recyclerview
-            val list = recyclerView {
+            list = recyclerView {
                 id = R.id.rec_inprogress
                 isClickable = true
                 val orientation = LinearLayoutManager.VERTICAL
@@ -55,54 +58,51 @@ class FragmentFinishedUI(val finishedAdapter: FinishedAdapter) : AnkoComponent<F
 
                         })
                 updateEmptyViewVisibility(this)
+                loadFinishedTask(this)
             }.lparams(width = matchParent, height = wrapContent) {
                 above(emptyView)
             }
 
-            floatingActionButton {
-                imageResource = android.R.drawable.ic_input_add
-                rippleColor = R.color.colorWhite
-                isClickable = true
-                setOnClickListener {
-                    alert {
-                        customView {
-                            verticalLayout {
-                                toolbar {
-                                    backgroundColor = ContextCompat.getColor(ctx, R.color.colorPrimary)
-                                    title = "What do you want todo next?"
-                                }.lparams(width = matchParent, height = matchParent)
-
-                                val task = editText {
-                                    hint = "To Do Ask"
-                                    padding = dip(20)
-                                }
-
-                                positiveButton("Add") {
-                                    if (task.text.toString().isEmpty()) {
-                                        toast("Oops, you must fill the task")
-                                    } else {
-                                        toast("Added new task")
-                                        val adapters = list?.adapter as FinishedAdapter
-                                        adapters.addNewItem(task.text.toString())
-                                    }
-                                }
-                                negativeButton("Cancel") {
-                                }
-
-                            }
-                        }
-                    }.show()
+            ui.owner.setOnDataListener(object : FragmentFinished.DataListener{
+                override fun onDataReceived(task: Task) {
+                    finishedAdapter.addNewItem(task)
                 }
-            }.lparams(width = wrapContent, height = wrapContent) {
-                alignParentBottom()
-                alignParentRight()
-                margin = dip(10)
-            }
+            });
+
+
         }
     }
 
-    private fun doesListHaveItem(list: RecyclerView?) = getListItemCount(list) > 0
+    private fun doesListHaveItem(list: RecyclerView) = getListItemCount(list) > 0
 
-    private fun getListItemCount(list: RecyclerView?) = list?.adapter?.itemCount ?: 0
+    private fun getListItemCount(list: RecyclerView) = list?.adapter?.itemCount ?: 0
+
+    fun updateEmptyViewVisibility(recyclerView: RecyclerView) {
+        if (doesListHaveItem(recyclerView)) {
+            emptyView.visibility = View.GONE
+        } else {
+            emptyView.visibility = View.VISIBLE
+        }
+    }
+
+    fun loadFinishedTask(recyclerView: RecyclerView){
+        val call: Call<MutableList<Task>> = taskService.getCompleteTasks()
+        call.enqueue(object : Callback<MutableList<Task>> {
+            override fun onResponse(call: Call<MutableList<Task>>, response: Response<MutableList<Task>>) {
+                if (response.isSuccessful) {
+                    response.body()?.let {
+                        finishedAdapter.updateTaskList(it)
+                        updateEmptyViewVisibility(recyclerView!!)
+                    }
+                } else {
+                    Log.d(TAG, response.errorBody().toString())
+                }
+            }
+
+            override fun onFailure(call: Call<MutableList<Task>>, t: Throwable) {
+                Log.d(TAG, t!!.printStackTrace().toString())
+            }
+        })
+    }
 
 }

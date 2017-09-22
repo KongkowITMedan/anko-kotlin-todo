@@ -1,6 +1,7 @@
 package com.zigic.todolist.adapter
 
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -8,28 +9,30 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.zigic.todolist.R
+import com.zigic.todolist.rest.response.Task
 import org.jetbrains.anko.*
-import java.util.*
+
 
 /**
  * Created by zigic on 19/09/17.
  */
 
 
-class TodolistAdapter(val arrayList: ArrayList<String> = ArrayList<String>()) : RecyclerView.Adapter<TodolistAdapter.MyViewHolder>() {
+class TodolistAdapter : RecyclerView.Adapter<TodolistAdapter.MyViewHolder>() {
+    var taskList: MutableList<Task> = mutableListOf()
 
     inner class MyViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val name: TextView = itemView.find(R.id.item_name)
         val action: Button = itemView.find(R.id.item_action)
-        fun bind(s: String) {
-            name.text = s
+        fun bind(task: Task) {
+            name.text = task.content
             action.text = "Done"
         }
 
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        return MyViewHolder(LunchMenuItemUI().createView(AnkoContext.create(parent!!.context, parent)))
+        return MyViewHolder(LunchMenuItemUI().createView(AnkoContext.create(parent.context, parent)))
     }
 
     class LunchMenuItemUI : AnkoComponent<ViewGroup> {
@@ -60,28 +63,43 @@ class TodolistAdapter(val arrayList: ArrayList<String> = ArrayList<String>()) : 
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        val location = arrayList.get(position)
-        holder!!.bind(location)
+        val task = taskList[position]
+        holder.bind(task)
 
         holder.action.setOnClickListener {
+            mDoneClickListener.onDoneClicked(task.id, position)
             this.removeItem(position)
         }
     }
 
-    override fun getItemCount(): Int {
-        return arrayList.size
-    }
+    override fun getItemCount(): Int = taskList.size
 
-    fun addNewItem(s: String) {
-        arrayList.add(s)
+    fun addNewItem(task: Task) {
+        taskList.add(task)
         notifyItemInserted(0)
         notifyDataSetChanged()
     }
 
     fun removeItem(position: Int) {
-        arrayList.removeAt(position)
+        taskList.removeAt(position)
         notifyItemRemoved(position)
         notifyDataSetChanged()
+    }
+
+    fun updateTaskList(taskList: MutableList<Task>) {
+        this.taskList = taskList
+        notifyDataSetChanged()
+    }
+
+    fun getItem(position: Int): Task = this.taskList[position]
+
+    interface OnDoneClickedListener {
+        fun onDoneClicked(id: Int, position: Int)
+    }
+
+    lateinit var mDoneClickListener: OnDoneClickedListener
+    fun setOnDoneClickedListener(l: OnDoneClickedListener) {
+        mDoneClickListener = l
     }
 
 }

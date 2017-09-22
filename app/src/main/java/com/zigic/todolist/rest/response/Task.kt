@@ -1,4 +1,4 @@
-package com.zigic.todolist.model
+package com.zigic.todolist.rest.response
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
@@ -8,19 +8,19 @@ import com.google.gson.annotations.SerializedName
  */
 
 
-class Task {
+class Task (
 
     @SerializedName("id")
     @Expose
-    var id: Int? = null
+    val id: Int = 0,
     @SerializedName("content")
     @Expose
-    var content: String? = null
+    var content: String = "",
     @SerializedName("editable")
     @Expose
-    var editable: Boolean? = null
+    var editable: Boolean = false,
     @SerializedName("complete")
     @Expose
-    var complete: Boolean? = null
+    var complete: Boolean = false
 
-}
+)

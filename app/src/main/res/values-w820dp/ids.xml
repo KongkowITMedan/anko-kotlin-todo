@@ -8,10 +8,6 @@
     <item name="listItemContainer" type="id" />
 
     <item name="rec_inprogress" type ="id"/>
-    <!--<item name="list_item_container" type ="id"/>-->
-    <!--<item name="task_num" type ="id"/>-->
-    <!--<item name="task_name" type ="id"/>-->
-
     <item name="item_empty" type="id"/>
     <item name="item_name" type="id"/>
     <item name="item_action" type="id"/>
@@ -20,4 +16,5 @@
     <item name="todolist_toolbar" type="id"/>
     <item name="todolist_tabs" type="id"/>
     <item name="todolist_container" type="id"/>
+    <item name="todolist_progress" type="id"/>
 </resources>

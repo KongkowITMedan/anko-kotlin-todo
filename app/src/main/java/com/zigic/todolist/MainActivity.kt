@@ -1,59 +1,58 @@
 package com.zigic.todolist
 
 import android.os.Bundle
-import android.support.design.widget.TabLayout
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.Toolbar
 import com.zigic.todolist.fragment.FragmentFinished
 import com.zigic.todolist.fragment.FragmentInprogress
+import com.zigic.todolist.rest.response.Task
 import org.jetbrains.anko.setContentView
 
 
-class MainActivity : AppCompatActivity() {
-    private var viewPager: ViewPager? = null
-    private var tabLayout: TabLayout? =null
+class MainActivity : AppCompatActivity(), FragmentInprogress.DataListener {
+    private lateinit var mAdapter: ViewPagerAdapter
+    lateinit var ui:MainUI
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        MainUI().setContentView(this)
-        setSupportActionBar(findViewById(R.id.todolist_toolbar) as Toolbar?)
-        viewPager = findViewById(R.id.todolist_container) as ViewPager?
-        setupViewPager(viewPager!!)
+        ui = MainUI()
+        ui.setContentView(this)
+        setSupportActionBar(ui.appToolbar)
+        setupViewPager(ui.appViewPager)
+        ui.appTabLayout.setupWithViewPager(ui.appViewPager)
 
-        tabLayout = findViewById(R.id.todolist_tabs) as TabLayout?
-        tabLayout!!.setupWithViewPager(viewPager)
     }
 
     private fun setupViewPager(viewPager: ViewPager) {
-        val adapter = ViewPagerAdapter(supportFragmentManager)
-        adapter.addFragment(FragmentInprogress(), "Todo List")
-        adapter.addFragment(FragmentFinished(), "Finished")
-        viewPager.adapter = adapter
+        mAdapter = ViewPagerAdapter(supportFragmentManager)
+        mAdapter.addFragment(FragmentInprogress(), "Todo List")
+        mAdapter.addFragment(FragmentFinished(), "Finished")
+        viewPager.adapter = mAdapter
     }
 
     internal inner class ViewPagerAdapter(manager: FragmentManager) : FragmentPagerAdapter(manager) {
         private val mFragmentList = ArrayList<Fragment>()
         private val mFragmentTitleList = ArrayList<String>()
 
-        override fun getItem(position: Int): Fragment {
-            return mFragmentList.get(position)
-        }
+        override fun getItem(position: Int) = mFragmentList[position]
 
-        override fun getCount(): Int {
-            return mFragmentList.size
-        }
+        //expression function, type reference
+        override fun getCount() = mFragmentList.size
 
         fun addFragment(fragment: Fragment, title: String) {
             mFragmentList.add(fragment)
             mFragmentTitleList.add(title)
         }
 
-        override fun getPageTitle(position: Int): CharSequence {
-            return mFragmentTitleList.get(position)
-        }
+        override fun getPageTitle(position: Int) = mFragmentTitleList[position]
+
+    }
+
+    override fun onDataReceived(task: Task) {
+        val fragment: FragmentFinished = supportFragmentManager.findFragmentById(ui.appViewPager.id) as FragmentFinished
+        fragment.removeTask(task)
     }
 }
